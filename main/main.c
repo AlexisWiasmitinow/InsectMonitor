@@ -16,6 +16,7 @@
 #include "status_handler.h"
 #include "utils.h"
 #include "box_controller.h"
+#include "port_pmu.h"
 // #include "tg_bot.h"
 
 #include <string.h>
@@ -39,6 +40,10 @@ void app_main(void)
 {
     esp_err_t ret = ESP_OK;
     nvs_memory_init();
+
+    i2c_init();
+
+    pmu_init();
 
     ret = box_controller_init();
     if (ret != ESP_OK) {
@@ -103,4 +108,6 @@ void app_main(void)
     // esp_log_level_set("httpd_uri", ESP_LOG_DEBUG);
     // esp_log_level_set("httpd_txrx", ESP_LOG_DEBUG);
     // esp_log_level_set("httpd_parse", ESP_LOG_DEBUG);
+
+    
 }

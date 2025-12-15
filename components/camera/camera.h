@@ -13,9 +13,14 @@
 #define IMAGE_WIDTH 320
 #define IMAGE_HEIGHT 240
 
+#elif IMAGE_FRAMESIZE == FRAMESIZE_UXGA
+
+#define IMAGE_WIDTH 1600
+#define IMAGE_HEIGHT 1200
+
 #endif
 
-#define IMAGE_SIZE (IMAGE_WIDTH * IMAGE_HEIGHT)  // VGA
+#define IMAGE_SIZE (IMAGE_WIDTH * IMAGE_HEIGHT)
 
 #include <esp_err.h>
 #include "esp_camera.h"
