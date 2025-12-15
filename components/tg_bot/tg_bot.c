@@ -23,8 +23,6 @@
 #include "cJSON.h"
 #include "mbedtls/base64.h"
 
-#include "sd_storage.h"
-
 #define MAX_HTTP_RECV_BUFFER 512
 #define MAX_HTTP_OUTPUT_BUFFER 2048
 #define PATH_LENGTH 256
@@ -119,7 +117,7 @@ static void tg_bot_task(void *arg) {
           }
 
           char token[51] = {0};
-          sd_storage_get_string(SETTINGS_API_TOKEN_KEY, token);
+          // sd_storage_get_string(SETTINGS_API_TOKEN_KEY, token);
           char url[256] = {0};
           sprintf(url, "https://%s/api/upload_data.php?token=%s",
                   CONFIG_TG_BOT_URL, token);

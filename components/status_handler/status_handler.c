@@ -13,7 +13,6 @@
 #include <string.h>
 
 #include "utils.h"
-#include "sd_storage.h"
 
 #define STATUS_KEY_WIFISTATE "wifiState"
 #define STATUS_KEY_SYSTEMTIME "systemTime"

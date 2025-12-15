@@ -10,7 +10,6 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 
-#include "sd_storage.h"
 #include "status_handler.h"
 #include "utils.h"
 #include "tg_bot.h"
@@ -40,6 +39,7 @@ static camera_handler_t instance = {
     .maxPhotos = 10,
     .now_ts = 0,
     .next_ts = 0,
+    .checkMotionInterval = 10,
 };
 
 static TaskHandle_t camera_handler_task_handle = NULL;
@@ -68,33 +68,7 @@ esp_err_t camera_handler_init(void)
 
 void camera_handler_update_settings(void)
 {
-    if (instance.sem) {
-        if (xSemaphoreTake(instance.sem, pdMS_TO_TICKS(2000)) == pdTRUE) {
-            if (sd_storage_get_int(SETTINGS_CHECK_MOTION_INT_KEY, &instance.checkMotionInterval) != ESP_OK) {
-                instance.checkMotionInterval = 60;
-                sd_storage_set_int(SETTINGS_CHECK_MOTION_INT_KEY, instance.checkMotionInterval);
-                sd_storage_update_settings();
-            }
-            if (instance.checkMotionInterval < 1) {
-                instance.checkMotionInterval = 60;
-                sd_storage_set_int(SETTINGS_CHECK_MOTION_INT_KEY, instance.checkMotionInterval);
-                sd_storage_update_settings();
-            }
-            time(&instance.next_ts);
-            instance.next_ts += instance.checkMotionInterval;
-            if (sd_storage_get_int(SETTINGS_MAX_PHOTOS, &instance.maxPhotos) != ESP_OK) {
-                instance.maxPhotos = 10;
-                sd_storage_set_int(SETTINGS_MAX_PHOTOS, instance.maxPhotos);
-                sd_storage_update_settings();
-            }
-            if (instance.maxPhotos < 2) {
-                instance.maxPhotos = 2;
-            }
-            sd_storage_delete_oldest_entries(instance.maxPhotos);
 
-            xSemaphoreGive(instance.sem);
-        }
-    }
 }
 
 esp_err_t camera_capture(void)
@@ -124,8 +98,8 @@ static esp_err_t take_and_save( char *path, size_t path_len,
 
         memset(path,0, path_len);
         snprintf(path, path_len, "pic_%s.jpeg", timestamp);
-        sd_storage_csv_update(path, pic->height * pic->height, timstmp_int);
-        camera_save_pic(pic, path);
+        // sd_storage_csv_update(path, pic->height * pic->height, timstmp_int);
+        // camera_save_pic(pic, path);
         tg_bot_send_image(path);
 
         memset(path,0, path_len);

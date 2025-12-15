@@ -4,14 +4,12 @@
 #include <string.h>
 
 #include "driver/ledc.h"
-#include "driver/gpio.h"
 
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/timers.h"
 
-#include "sd_storage.h"
 #include "utils.h"
 
 #define LIGHT_PIN GPIO_NUM_16

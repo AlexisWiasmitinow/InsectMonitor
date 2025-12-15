@@ -23,9 +23,6 @@
 esp_err_t camera_init(void);
 void camera_release_buf(camera_fb_t *buf);
 camera_fb_t *camera_take_pic(void);
-esp_err_t camera_save_pic(const camera_fb_t *pic, char *path);
-int camera_get_prev(camera_fb_t *pic);
-int camera_get_diff_prev(const camera_fb_t *pic, int difference_threshold);
 esp_err_t camera_crop_image(const camera_fb_t *pic, camera_fb_t *croppedPic,
                             uint16_t startX, uint16_t startY, uint16_t width,
                             uint16_t height);

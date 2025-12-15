@@ -14,7 +14,6 @@
 #include "mdns.h"
 #include <lwip/apps/netbiosns.h>
 
-#include "sd_storage.h"
 #include "status_handler.h"
 
 #define WIFI_CONNECTED_BIT      BIT0
@@ -83,9 +82,6 @@ static esp_err_t start_mdns(void)
 
 static void parse_wifi_settings(char *ssid, char *pass, char *mode)
 {
-    sd_storage_get_string(SETTINGS_WIFI_SSID_KEY, ssid);
-    sd_storage_get_string(SETTINGS_WIFI_PASS_KEY, pass);
-    sd_storage_get_string(SETTINGS_WIFI_MODE_KEY, mode);
 }
 
 esp_err_t restart_wifi(void)

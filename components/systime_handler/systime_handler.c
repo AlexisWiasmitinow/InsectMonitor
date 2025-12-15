@@ -5,7 +5,6 @@
 #include "esp_log.h"
 #include "esp_netif_sntp.h"
 #include "cJSON.h"
-#include "sd_storage.h"
 
 static const char *TAG = "SYSTIME";
 
@@ -46,9 +45,6 @@ esp_err_t sh_get_timezone_list_json(char *buf, size_t buf_length)
 esp_err_t sh_get_timezone(char *timezone)
 {
     esp_err_t ret = ESP_OK;
-    if (sd_storage_get_string(SETTINGS_TZ_KEY, timezone) != ESP_OK) {
-        ret = sd_storage_set_string(SETTINGS_TZ_KEY, "UTC0", 4);
-    }
     return ret;
 }
 

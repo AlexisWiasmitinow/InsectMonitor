@@ -1,3 +1,3 @@
 idf_component_register(SRCS "box_controller.c"
                     INCLUDE_DIRS "."
-                    PRIV_REQUIRES sd_storage esp_driver_ledc utils)
+                    REQUIRES driver utils)
