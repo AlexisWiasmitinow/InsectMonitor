@@ -20,11 +20,11 @@
 #define WIFI_CONNECTED_BIT      BIT0
 #define WIFI_FAIL_BIT           BIT1
 
-#define HOSTNAME                "queenbreeder"
+#define HOSTNAME                "insect_monitor"
 #define MDNS_INSTANCE           "web server"
 
-#define DEFAULT_AP_NAME         "QueenBreeder"
-#define DEFAULT_AP_PASSWORD     "QueenBreeder"
+#define DEFAULT_AP_NAME         "InsectMonitor"
+#define DEFAULT_AP_PASSWORD     "InsectMonitor"
 #define DEFAULT_MODE            "AP"
 
 #define WIFI_HANDLER_TASK_SIZE  (3 * 1024)

@@ -122,7 +122,6 @@ static esp_err_t update_settings_handler(httpd_req_t *req) {
     sd_storage_clear_pics_folder();
   }
   camera_handler_update_settings();
-  box_controller_reload_settings();
 
   free(query);
   free(query_dup);
@@ -367,7 +366,6 @@ static esp_err_t update_handler(httpd_req_t *req) {
     char *var = strtok(p, "="), *val = NULL;
     if (var && (val = strtok(NULL, "="))) {
       if (!strcmp("filename", var)) {
-        box_controller_pause_thread(true);
         camera_pause_thread(true);
         webpage_pause(true);
         if (!strcmp("storage.bin", val)) {
