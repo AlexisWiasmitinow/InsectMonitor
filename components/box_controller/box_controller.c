@@ -14,7 +14,7 @@
 #include "sd_storage.h"
 #include "utils.h"
 
-#define LIGHT_PIN GPIO_NUM_2
+#define LIGHT_PIN GPIO_NUM_16
 #define PINS_MASK (1ULL << LIGHT_PIN)
 
 static TimerHandle_t pump_timer;
