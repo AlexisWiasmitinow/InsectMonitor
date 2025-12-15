@@ -23,7 +23,6 @@
 #include "cJSON.h"
 #include "mbedtls/base64.h"
 
-#include "sensors_handler.h"
 #include "sd_storage.h"
 
 #define MAX_HTTP_RECV_BUFFER 512
@@ -184,8 +183,6 @@ esp_err_t tg_bot_send_image(const char *path) {
 
   data_t p = {0};
   strcpy(p.path, path);
-  sens_handler_get_temp(&p.temp);
-  sens_handler_get_humidity(&p.hum);
 
   return xQueueSend(tg_bot_queue, &p, pdMS_TO_TICKS(1000)) == pdTRUE ? ESP_OK
                                                                      : ESP_FAIL;
