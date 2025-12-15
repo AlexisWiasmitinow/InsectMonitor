@@ -1,0 +1,184 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <link rel="icon" href="img/bee.png">
+    <title>QueenBreeder</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+
+<body ondrop="dropHandler(event);" ondragover="dragOverHandler(event);">
+    <div class="box">
+        <div style="text-align: center;">
+            <h2> Current Time: <span id="currentTime"></span></h2>
+            <p><span id="currentTime"></span></p>
+        </div>
+
+
+        <h2>Motion Detection Status:</h2>
+        <p id="motionStatus">Loading...</p>
+        <p id="lastMotionTS">Loading...</p>
+        <button id="reset_motion">Reset Motion Status</button>
+    </div>
+    <div class="box">
+        <div class="header">
+            <h2 id="crop_title">Image viewer</h2>
+        </div>
+        <div class="column">
+            <canvas id="canvas"></canvas>
+            <div id="imageList"></div>
+        </div>
+        <div class="column">
+            <div id="imageStatus">Loading...</div>
+            <input type="checkbox" id="showcrop"><label for="showcrop" id="showcroplabel">Show Region of
+                Interest</label>
+            <button id="crop">Save Region of Interest</button>
+            <button id="resetcrop">Reset Region of Interest</button>
+            <button id="loadImage">Reload</button>
+            <button id="take_picture">Take New Picture</button>
+        </div>
+    </div>
+
+    <div class="box" id="settings">
+        <div class="header">
+            <h2 id="settings_title">Settings</h2>
+        </div>
+        <br>
+        <div class="row">
+            <label for="differenceThreshold" id="differenceThresholdLabel">Difference Threshold:</label>
+            <input type="number" id="differenceThreshold" name="differenceThreshold" min="0" max="255">
+
+            <label for="checkMotionInterval">Motion Interval, seconds:</label>
+            <input type="number" id="checkMotionInterval" name="checkMotionInterval" min="1" max="100000"
+                onkeyup="if(value<1) value=1;">
+            <label for="maxPhotos">Max Photos:</label>
+            <input type="number" id="maxPhotos" name="maxPhotos" min="2" max="20" onkeyup="if(value<2) value=2;">
+        </div>
+        <br>
+        <div class="row">
+            <label for="temperatureTarget">Temperature Target, °C:</label>
+            <input type="number" id="temperatureTarget" name="temperatureTarget" min="0" max="50">
+            <label for="tempCheckInterval">Temperature check interval, seconds:</label>
+            <input type="number" id="tempCheckInterval" name="tempCheckInterval" min="1" max="100000"
+                onkeyup="if(value<1) value=1;">
+        </div>
+        <br>
+        <div class="row">
+            <label for="humidityTarget">Humidity Target, %:</label>
+            <input type="number" id="humidityTarget" name="humidityTarget" min="0" max="100">
+            <label for="pumpMsPerH">Pump time, ms per % H</label>
+            <input type="number" id="pumpMsPerH" name="pumpMsPerH" min="10" max="100000">
+            <label for="humidityCheckInterval">Humidity check interval, seconds:</label>
+            <input type="number" id="humidityCheckInterval" name="humidityCheckInterval" min="1" max="120"
+                onkeyup="if(value<1) value=1;">
+        </div>
+        <br>
+        <div class="row">
+            <label for="apiToken">API token:</label>
+            <input type="text" id="apiToken" name="apiToken">
+            <label id="deviceID">Your device ID:</label>
+        </div>
+        <br>
+        <div class="row">
+            <button id="save_settings">Save Settings</button>
+        </div>
+    </div>
+    <div class="box">
+        <div class="header">
+            <h2 id="test_io_title">Test IOs</h2>
+        </div>
+        <div class="row">
+            <button id="test_maintains_mode" class="setio">Maintains mode OFF</button>
+        </div>
+        <div class="row">
+            <button id="test_led" class="setio">LED on</button>
+            <button id="test_pump" class="setio">Pump on</button>
+            <button id="test_fan" class="setio">Fan on</button>
+            <button id="test_heat" class="setio">Heater on</button>
+        </div>
+    </div>
+    <div class="box">
+        <div class="header">
+            <h2 id="box_climate_title">Box Climate</h2>
+        </div>
+        <div class="row">
+            <div class="column" id="temp_title"> Temperature </div>
+            <div class="column" id="temp"></div>
+            <div class="unit">°C</div>
+            <div id="temp_attention" class="attention" hidden="true">FAILED to take TEMPERATURE</div>
+        </div>
+        <div class="row">
+            <div class="column" id="hum_title"> Humidity </div>
+            <div class="column" id="hum"></div>
+            <div class="unit">&percnt;</div>
+            <div id="hum_attention" class="attention" hidden="true">FAILED to take HUMIDITY</div>
+        </div>
+        <br>
+        <div>
+            <label for="historic_data_selector">Select date to show</label>
+            <select id="historic_data_selector"></select>
+            <button id="historic_update">Update data</button>
+            <canvas id='chartTemperature'></canvas>
+            <canvas id='chartHumidity'></canvas>
+        </div>
+    </div>
+
+    <div class="box" id="networksettings">
+        <div class="header">
+            <h2 id="networksettings_title">Network Settings</h2>
+        </div>
+        <br>
+        <div class="row">
+            <div><label for="ssid">SSID:</label></div>
+            <div><input type="text" id="ssid" name="ssid"></div>
+            <div><label for="password">PASSWORD:</label></div>
+            <div><input type="text" id="password" name="password"></div>
+        </div>
+        <div class="row">
+            <div>Wifi Mode:</div>
+            <div>
+                <input type="radio" id="ap" name="mode" value="AP">
+                <label for="ap">Access Point</label>
+                <input type="radio" id="client" name="mode" value="Client">
+                <label for="client">Client</label>
+            </div>
+            <br>
+            <select id="timezone">
+            </select>
+        </div>
+        <div class="row"><button id="save_network" type="submit">Save Network Setting</button></div>
+        <br>
+        <div>
+            <label id="wifi_mode_attention"></label>
+        </div>
+        <br>
+        <div>
+            Wifi Signal Quality: <label id="wifi_signal"></label>
+        </div>
+    </div>
+    <div class="box" id="drop_zone">
+        <div class="header">
+            <h2 id="update_title">Update</h2>
+            <p id="update_text">Use storage.bin to update file system, any other filename (usually main.bin) will update
+                the firmware.
+            </p>
+        </div>
+        <div class="row">
+            <div>
+                <input type='file' name='update' id="otafile" />
+                <button type="button" id="upload" onclick="startUpload()">Upload</button>
+            </div>
+            <div id="progress"></div>
+        </div>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+    <script src="js/update.js"></script>
+    <script src="js/luxon.min.js"></script>
+    <script src="js/chart.umd.min.js"></script>
+    <script src="js/chartjs-adapter-luxon.umd.min.js"></script>
+    <script type="module" src="js/color.min.js"></script>
+</body>
+
+</html>

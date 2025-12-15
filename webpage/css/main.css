@@ -1,0 +1,156 @@
+body {
+	max-width: 70em;
+	margin: auto;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: large;
+}
+
+button,
+input {
+	font-size: large;
+}
+
+h1 {
+	font-size: xx-large;
+}
+
+.box {
+	border: solid 0.1em black;
+	margin-bottom: 1em;
+	border-radius: 1em;
+	padding: 1em;
+}
+
+label {
+	padding: 1em;
+}
+
+.terminal {
+	padding: 0;
+}
+
+.pic {
+	border: solid 0.1em black;
+	margin-bottom: 1em;
+	border-radius: 1em;
+	padding: 1em;
+	text-align: center;
+}
+
+#manual_image {
+	display: block;
+	margin: 1em auto;
+	border: solid 0.1em black;
+	width: 640px;
+	height: 480px;
+}
+
+#imageList li {
+	cursor: pointer;
+}
+
+.column {
+	display: table-cell;
+	padding: 0.2em;
+}
+
+.attention {
+	display: table-cell;
+	padding: 0.2em;
+	color: white;
+	background-color: red;
+}
+
+.row,
+.header {
+	margin: 0.2em;
+	width: 100%;
+}
+
+.row {
+	display: table-row;
+}
+
+button {
+	margin: 0.2em;
+}
+
+.form-control:focus,
+.dragging {
+	color: #212529;
+	background-color: #fff;
+	border-color: #86b7fe;
+	outline: 0;
+	box-shadow: 0 0 0 .25rem rgba(13, 110, 253, .25)
+}
+
+.container {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 20px;
+}
+
+.image-box {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+img,
+canvas {
+	min-width: 640px;
+	max-width: 100%;
+	height: 100%;
+	width: 100%;
+	max-height: 100%;
+	min-height: 480px;
+	border: solid 0.1em black;
+}
+
+#chartTemperature,
+#chartHumidity {
+	margin: 1em;
+}
+
+
+input[type="text"] {
+	width: 100%;
+	padding: 5px;
+	box-sizing: border-box;
+}
+
+input[type="radio"] {
+	margin-right: 10px;
+}
+
+.wifi-button {
+	text-align: center;
+}
+
+.text-container {
+	/* background: rgba(255, 255, 255, 0.7); Opcjonalne: tło z przezroczystością, aby tekst był czytelny */
+	margin: 0;
+	/* Usuń domyślne marginesy */
+	padding: 5px;
+	/* Dodanie odstępu wokół tekstu */
+}
+
+.toggle-btn {
+	width: 100px;
+	padding: 10px;
+	text-align: center;
+	cursor: pointer;
+	background-color: gray;
+	color: white;
+	border: none;
+	border-radius: 5px;
+	font-size: 16px;
+}
+
+.active {
+	background-color: green;
+}
+
+select {
+	font-size: large;
+}
