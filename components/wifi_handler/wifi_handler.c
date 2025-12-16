@@ -82,6 +82,13 @@ static esp_err_t start_mdns(void)
 
 static void parse_wifi_settings(char *ssid, char *pass, char *mode)
 {
+    #define _ssid "Your AP"
+    #define _pass "Your pass"
+    #define _mode "STA"
+
+    memcpy(ssid, _ssid, strlen(_ssid));
+    memcpy(pass, _pass, strlen(_pass));
+    memcpy(mode, _mode, strlen(_mode));
 }
 
 esp_err_t restart_wifi(void)
@@ -112,7 +119,7 @@ static void wh_task(void *arg)
         memcpy(mode, DEFAULT_MODE, sizeof(DEFAULT_MODE)-1);
     }
 
-    if (!strcmp(mode, "Client")) {
+    if (!strcmp(mode, "STA")) {
         isSTA = true;
     } else if (!strcmp(mode, "AP")) {
         isSTA = false;
