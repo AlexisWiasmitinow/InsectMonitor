@@ -3,26 +3,30 @@
 #include <sys/time.h>
 #include <string.h>
 
-#include "driver/ledc.h"
+#include "driver/gpio.h"
 
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/timers.h"
 
+#include "camera_handler.h"
 #include "utils.h"
 
 #define LIGHT_PIN GPIO_NUM_16
-#define PINS_MASK (1ULL << LIGHT_PIN)
+#define TRIGGER_PIN GPIO_NUM_17 // onboard PIR sensor
+#define PINS_MASK_OUTPUT (1ULL << LIGHT_PIN)
+#define PINS_MASK_INPUT (1ULL << TRIGGER_PIN)
 
-static TimerHandle_t pump_timer;
 static SemaphoreHandle_t maintain_sem;
-static SemaphoreHandle_t settings_sem;
-static TaskHandle_t task_handle;
 
 static volatile bool maintenance_mode = false;
 
 static const char* TAG = "BOX_CNTRL";
+
+static IRAM_ATTR void trigger_pin_handler(void *arg) {
+  camera_capture();
+}
 
 esp_err_t box_controller_init(void) {
   esp_err_t ret;
@@ -32,13 +36,25 @@ esp_err_t box_controller_init(void) {
       .mode = GPIO_MODE_OUTPUT,
       .pull_down_en = GPIO_PULLDOWN_DISABLE,
       .pull_up_en = GPIO_PULLUP_DISABLE,
-      .pin_bit_mask = PINS_MASK,
+      .pin_bit_mask = PINS_MASK_OUTPUT,
   };
   ret = gpio_config(&gpio_cfg);
   if (ret != ESP_OK) {
     ESP_LOGE(TAG, "Failed to initialize output pins mask: (ret:%d)", ret);
     return ret;
   }
+
+  gpio_cfg.intr_type = GPIO_INTR_POSEDGE;
+  gpio_cfg.mode = GPIO_MODE_INPUT;
+  gpio_cfg.pin_bit_mask = PINS_MASK_INPUT;
+  ret = gpio_config(&gpio_cfg);
+  if (ret != ESP_OK) {
+    ESP_LOGE(TAG, "Failed to initialize output pins mask: (ret:%d)", ret);
+    return ret;
+  }
+
+  gpio_install_isr_service(0);
+  gpio_isr_handler_add(TRIGGER_PIN, trigger_pin_handler, NULL);
 
   maintain_sem = xSemaphoreCreateBinary();
   xSemaphoreGive(maintain_sem);

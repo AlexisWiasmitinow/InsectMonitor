@@ -136,8 +136,8 @@ esp_err_t pmu_init()
     power.enableALDO4();
 
     // PIR VDD 3300
-    // power.setALDO3Voltage(3300);
-    // power.enableALDO3();
+    power.setALDO3Voltage(3300);
+    power.enableALDO3();
 
     // OLED VDD 3300
     power.setBLDO1Voltage(3300);

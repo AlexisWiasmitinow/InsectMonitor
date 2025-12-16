@@ -48,7 +48,16 @@ void camera_handler_update_settings(void)
 esp_err_t camera_capture(void)
 {
     esp_err_t ret = ESP_OK;
-    xSemaphoreGive(sem);
+    if(!sem) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (xPortInIsrContext() == pdTRUE) {
+        BaseType_t higher_prio = 0;
+        xSemaphoreGiveFromISR(sem, &higher_prio);
+        portYIELD_FROM_ISR(higher_prio);
+    } else {
+        xSemaphoreGive(sem);
+    }
     return ret;
 }
 
