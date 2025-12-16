@@ -1,0 +1,8 @@
+menu "Remote server settings"
+    config REMOTE_SERVER_URL
+        default "queenbreeder.io"
+        string "Remote server URL"
+    config REMOTE_SERVER_API_TOKEN_KEY
+        default "b31e78b25243edae66de9bc35fb658103ea7c8216d0fb99d16"
+        string "API Key"
+endmenu

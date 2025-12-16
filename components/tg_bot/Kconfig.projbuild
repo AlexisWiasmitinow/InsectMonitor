@@ -1,6 +1,0 @@
-menu "TG bot settings"
-    config TG_BOT_URL
-        default "queenbreeder.io"
-        string "Telegram Bot URL"
-    
-endmenu

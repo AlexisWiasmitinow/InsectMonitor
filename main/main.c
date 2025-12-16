@@ -17,7 +17,7 @@
 #include "utils.h"
 #include "box_controller.h"
 #include "port_pmu.h"
-// #include "tg_bot.h"
+#include "remote_server.h"
 
 #include <string.h>
 
@@ -58,7 +58,7 @@ void app_main(void)
         return;
     }
 
-    if(start_wifi(WIFI_HANDLER_MODE_DEFAULT_AP) != ESP_OK) {
+    if(start_wifi(WIFI_HANDLER_MODE_FROM_SETTINGS) != ESP_OK) {
     }
     int await = 0;
     while(await < 60 && !wifi_is_connected()) {
@@ -75,11 +75,11 @@ void app_main(void)
         ESP_LOGW(TAG, "Failed to adjust time. Use default system time");
     }
 
-    // ret = tg_bot_init();
-    // if (ret != ESP_OK) {
-    //     ESP_LOGE(TAG, "Failed to start webpage: (ret:%d)", ret);
-    //     return;
-    // }
+    ret = rs_init();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to start webpage: (ret:%d)", ret);
+        return;
+    }
 
     ret = camera_handler_init();
     if (ret != ESP_OK) {
@@ -87,11 +87,11 @@ void app_main(void)
         return;
     }
 
-    // ret = webpage_init();
-    // if (ret != ESP_OK) {
-    //     ESP_LOGE(TAG, "Failed to start webpage: (ret:%d)", ret);
-    //     return;
-    // }
+    ret = webpage_init();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to start webpage: (ret:%d)", ret);
+        return;
+    }
 
     // int i = 0;
     // while (i < 10) {

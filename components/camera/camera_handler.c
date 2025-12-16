@@ -12,52 +12,26 @@
 
 #include "status_handler.h"
 #include "utils.h"
-#include "tg_bot.h"
+#include "remote_server.h"
 
 #define TASK_SIZE           (8*1024)
 
-typedef struct camera_handler
-{
-    int maxPhotos;
-
-    int checkMotionInterval;
-
-    time_t now_ts;
-    time_t next_ts;
-
-    SemaphoreHandle_t sem;
-} camera_handler_t;
+SemaphoreHandle_t sem;
 
 static void camera_handler_task(void *arg);
-static esp_err_t take_and_save (char *path, size_t path_len, 
-                                char *timestamp, size_t ts_len);
 
 const static char *TAG = "CAM_HANDLER";
-
-static SemaphoreHandle_t take_pic_immediately = NULL;
-static camera_handler_t instance = {
-    .maxPhotos = 10,
-    .now_ts = 0,
-    .next_ts = 0,
-    .checkMotionInterval = 10,
-};
 
 static TaskHandle_t camera_handler_task_handle = NULL;
 
 esp_err_t camera_handler_init(void)
 {
-    instance.sem = xSemaphoreCreateBinary();
-    if (!instance.sem) {
+    sem = xSemaphoreCreateBinary();
+    if (!sem) {
         ESP_LOGE(TAG, "Failed to create semaphore");
         return ESP_FAIL;
     }
-    xSemaphoreGive(instance.sem);
-
-    take_pic_immediately = xSemaphoreCreateBinary();
-    if (!take_pic_immediately) {
-        ESP_LOGE(TAG, "Failed to create take_pic_immediately semaphore");
-        return ESP_FAIL;
-    }
+    xSemaphoreTake(sem, 0);
 
     if (xTaskCreateWithCaps(camera_handler_task, "ch_task", TASK_SIZE, NULL, 8, &camera_handler_task_handle, MALLOC_CAP_SPIRAM) != pdPASS) {
         ESP_LOGE(TAG, "Failed to create handler task");
@@ -74,7 +48,7 @@ void camera_handler_update_settings(void)
 esp_err_t camera_capture(void)
 {
     esp_err_t ret = ESP_OK;
-    xSemaphoreTake(take_pic_immediately, pdMS_TO_TICKS(1000));
+    xSemaphoreGive(sem);
     return ret;
 }
 
@@ -88,22 +62,12 @@ esp_err_t camera_pause_thread(bool pause)
     return ESP_OK;
 }
 
-static esp_err_t take_and_save( char *path, size_t path_len, 
-                                char *timestamp, size_t ts_len)
+static esp_err_t take_and_send(void)
 {
     esp_err_t ret = ESP_OK;
     camera_fb_t *pic = camera_take_pic();
     if (pic) {
-        int64_t timstmp_int = get_timestamp(timestamp, ts_len);
-
-        memset(path,0, path_len);
-        snprintf(path, path_len, "pic_%s.jpeg", timestamp);
-        // sd_storage_csv_update(path, pic->height * pic->height, timstmp_int);
-        // camera_save_pic(pic, path);
-        tg_bot_send_image(path);
-
-        memset(path,0, path_len);
-
+        rs_send_image(pic->buf, pic->len);
         camera_release_buf(pic);
     } else {
         ESP_LOGE(TAG, "Failed to take pic");
@@ -114,38 +78,15 @@ static esp_err_t take_and_save( char *path, size_t path_len,
 
 static void camera_handler_task(void *arg)
 {
-    char timestamp[20] = {0};
-    char path[70] = {0};
-
     camera_handler_update_settings();
-
-    time(&instance.now_ts);
-    instance.next_ts = instance.checkMotionInterval + instance.now_ts;
 
     while (1)
     {        
-        if (instance.sem) {
-            if (xSemaphoreTake(instance.sem, pdMS_TO_TICKS(2000)) == pdTRUE) {
-
-                time(&instance.now_ts);
-                if (xSemaphoreTake(take_pic_immediately, pdMS_TO_TICKS(100)) == pdFALSE) {
-                    take_and_save(path, sizeof(path), timestamp, sizeof(timestamp));
-                    instance.next_ts = instance.checkMotionInterval + instance.now_ts;
-                    xSemaphoreGive(take_pic_immediately);
-                } else {
-                    xSemaphoreGive(take_pic_immediately);
-    
-                    if (instance.now_ts >= instance.next_ts) {
-                        instance.next_ts = instance.checkMotionInterval + instance.now_ts;
-    
-                        take_and_save(path, sizeof(path), timestamp, sizeof(timestamp));
-                    }
-                }
-
-                xSemaphoreGive(instance.sem);
+        if (sem) {
+            if (xSemaphoreTake(sem, portMAX_DELAY)) {
+                take_and_send();
             }
         }
-        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
 
