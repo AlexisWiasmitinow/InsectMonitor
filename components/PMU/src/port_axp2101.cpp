@@ -26,6 +26,7 @@ extern int pmu_register_write_byte(uint8_t devAddr, uint8_t regAddr, uint8_t *da
 
 extern "C" esp_err_t pmu_init(void);
 extern "C" void pmu_isr_handler(void);
+extern "C" void pmu_go_sleep(void);
 
 static QueueHandle_t  gpio_evt_queue = NULL;
 
@@ -136,8 +137,8 @@ esp_err_t pmu_init()
     power.enableALDO4();
 
     // PIR VDD 3300
-    power.setALDO3Voltage(3300);
-    power.enableALDO3();
+    // power.setALDO3Voltage(3300);
+    // power.enableALDO3();
 
     // OLED VDD 3300
     power.setBLDO1Voltage(3300);
@@ -300,6 +301,20 @@ void pmu_isr_handler()
     }
     // Clear PMU Interrupt Status Register
     power.clearIrqStatus();
+}
+
+void pmu_go_sleep(void) {
+    power.enableBLDO1(); // disable OLED
+    power.enableALDO1(); // disable CAM
+    power.enableALDO2(); // disable CAM
+    power.enableALDO4(); // disable CAM
+
+    power.disableIRQ(XPOWERS_AXP2101_ALL_IRQ);
+    // Clear all interrupt flags
+    power.clearIrqStatus();
+    power.enableIRQ( XPOWERS_AXP2101_PKEY_SHORT_IRQ );
+    power.wakeupControl(XPOWERS_AXP2101_WAKEUP_IRQ_PIN_TO_LOW, true);
+    power.enableSleep();
 }
 
 static void pmu_handler_task(void *args)

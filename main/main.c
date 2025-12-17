@@ -96,14 +96,19 @@ void app_main(void)
         return;
     }
 
-    // int i = 0;
-    // while (i < 10) {
-    //     i++;
-    //     vTaskDelay(pdMS_TO_TICKS(1000));
-    // }
-    // ESP_LOGW(TAG, "Going sleep...");
-    // vTaskDelay(pdMS_TO_TICKS(500));
-    // esp_deep_sleep_start();
+    esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
+    if (cause == ESP_SLEEP_WAKEUP_EXT0) {
+        camera_capture();
+    }
+
+    int i = 0;
+    while (i < 10) {
+        i++;
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+    ESP_LOGW(TAG, "Going sleep...");
+    vTaskDelay(pdMS_TO_TICKS(500));
+    pmu_sleep();
 
     // xTaskCreate(stats_task, "stats", 4 * 1024, NULL, tskIDLE_PRIORITY + 3, NULL);
 
