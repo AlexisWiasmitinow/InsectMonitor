@@ -6,6 +6,7 @@
 #include "driver/gpio.h"
 
 #include "esp_log.h"
+#include "esp_sleep.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/timers.h"
@@ -14,7 +15,7 @@
 #include "utils.h"
 
 #define LIGHT_PIN GPIO_NUM_16
-#define TRIGGER_PIN GPIO_NUM_17 // onboard PIR sensor
+#define TRIGGER_PIN GPIO_NUM_16 // onboard PIR sensor
 #define PINS_MASK_OUTPUT (1ULL << LIGHT_PIN)
 #define PINS_MASK_INPUT (1ULL << TRIGGER_PIN)
 
@@ -55,6 +56,8 @@ esp_err_t box_controller_init(void) {
 
   gpio_install_isr_service(0);
   gpio_isr_handler_add(TRIGGER_PIN, trigger_pin_handler, NULL);
+
+  esp_sleep_enable_ext0_wakeup(TRIGGER_PIN, 1);
 
   maintain_sem = xSemaphoreCreateBinary();
   xSemaphoreGive(maintain_sem);

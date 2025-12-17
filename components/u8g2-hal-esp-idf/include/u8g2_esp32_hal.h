@@ -12,6 +12,7 @@
 #include "u8g2.h"
 
 #include "driver/gpio.h"
+#include "esp_idf_version.h"
 
 #if ((defined CONFIG_I2C_ENABLE_SLAVE_DRIVER_VERSION_2 && ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 2, 0)))
 #define U8G2_ESP32_HAL_USE_V2_I2C_API
