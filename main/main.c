@@ -108,7 +108,7 @@ void app_main(void)
     }
     ESP_LOGW(TAG, "Going sleep...");
     vTaskDelay(pdMS_TO_TICKS(500));
-    pmu_sleep();
+    // pmu_sleep();
 
     // xTaskCreate(stats_task, "stats", 4 * 1024, NULL, tskIDLE_PRIORITY + 3, NULL);
 
