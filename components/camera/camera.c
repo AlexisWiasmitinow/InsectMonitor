@@ -1,63 +1,51 @@
-
-#include <esp_log.h>
-#include "esp_camera.h"
+/**
+ * @file camera.c
+ * @author Sergiu Popov (sg.popov@pm.me)
+ * @brief 
+ * @version 0.1
+ * @date 2025-12-15
+ * 
+ * @copyright Copyright (c) 2025
+ * 
+ */
 
 #include "camera.h"
-#include <esp_vfs_fat.h>
-#include <esp_vfs.h>
 
 #include <string.h>
-#include "sd_storage.h"
+#include <esp_log.h>
+#include <esp_heap_caps.h>
+
+#include "esp_camera.h"
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/semphr.h"
+
 #include "utils.h"
 #include "box_controller.h"
 
-#ifdef CONFIG_IDF_TARGET_ESP32
-
-#define CAM_PIN_PWDN GPIO_NUM_32
-#define CAM_PIN_RESET GPIO_NUM_NC  // software reset will be performed
-#define CAM_PIN_XCLK GPIO_NUM_0
-#define CAM_PIN_SIOD GPIO_NUM_26
-#define CAM_PIN_SIOC GPIO_NUM_27
-
-#define CAM_PIN_D7 GPIO_NUM_35
-#define CAM_PIN_D6 GPIO_NUM_34
-#define CAM_PIN_D5 GPIO_NUM_39
-#define CAM_PIN_D4 GPIO_NUM_36
-#define CAM_PIN_D3 GPIO_NUM_21
-#define CAM_PIN_D2 GPIO_NUM_19
-#define CAM_PIN_D1 GPIO_NUM_18
-#define CAM_PIN_D0 GPIO_NUM_5
-#define CAM_PIN_VSYNC GPIO_NUM_25
-#define CAM_PIN_HREF GPIO_NUM_23
-#define CAM_PIN_PCLK GPIO_NUM_22
-
-#elif CONFIG_IDF_TARGET_ESP32S3
-
 #define CAM_PIN_PWDN GPIO_NUM_NC
-#define CAM_PIN_RESET GPIO_NUM_NC  // software reset will be performed
-#define CAM_PIN_XCLK GPIO_NUM_15
-#define CAM_PIN_SIOD GPIO_NUM_4
-#define CAM_PIN_SIOC GPIO_NUM_5
 
-#define CAM_PIN_D7 GPIO_NUM_16
-#define CAM_PIN_D6 GPIO_NUM_17
-#define CAM_PIN_D5 GPIO_NUM_18
-#define CAM_PIN_D4 GPIO_NUM_12
-#define CAM_PIN_D3 GPIO_NUM_10
-#define CAM_PIN_D2 GPIO_NUM_8
-#define CAM_PIN_D1 GPIO_NUM_9
-#define CAM_PIN_D0 GPIO_NUM_11
-#define CAM_PIN_VSYNC GPIO_NUM_6
-#define CAM_PIN_HREF GPIO_NUM_7
-#define CAM_PIN_PCLK GPIO_NUM_13
+#define CAM_PIN_SIOC GPIO_NUM_4
+#define CAM_PIN_SIOD GPIO_NUM_5
+#define CAM_PIN_HREF GPIO_NUM_18
+#define CAM_PIN_PCLK GPIO_NUM_12
+#define CAM_PIN_XCLK GPIO_NUM_38
+#define CAM_PIN_VSYNC GPIO_NUM_8
+#define CAM_PIN_RESET GPIO_NUM_39
 
-#endif
+#define CAM_PIN_D7 GPIO_NUM_9
+#define CAM_PIN_D6 GPIO_NUM_10
+#define CAM_PIN_D5 GPIO_NUM_11
+#define CAM_PIN_D4 GPIO_NUM_13
+#define CAM_PIN_D3 GPIO_NUM_21
+#define CAM_PIN_D2 GPIO_NUM_48
+#define CAM_PIN_D1 GPIO_NUM_47
+#define CAM_PIN_D0 GPIO_NUM_14
 
 #define LIGHT_DELAY 1000
 
 static const char *TAG = "CAMERA";
-
-static char *mem_pool = NULL;
 
 camera_fb_t *camera_take_pic(void) {
   esp_err_t ret;
@@ -71,18 +59,6 @@ camera_fb_t *camera_take_pic(void) {
 }
 
 void camera_release_buf(camera_fb_t *buf) { esp_camera_fb_return(buf); }
-
-esp_err_t camera_save_pic(const camera_fb_t *pic, char *path) {
-  FILE *file = fopen(path, "w");
-  if (!file) {
-    ESP_LOGE(TAG, "Failed to open file:%s", path);
-    return ESP_FAIL;
-  } else {
-    fwrite(pic->buf, 1, pic->len, file);
-    fclose(file);
-  }
-  return ESP_OK;
-}
 
 esp_err_t camera_crop_image(const camera_fb_t *pic, camera_fb_t *croppedPic,
                             uint16_t startX, uint16_t startY, uint16_t width,
@@ -130,102 +106,6 @@ void camera_image_free_buf(camera_fb_t *pic) {
       free(pic->buf);
     }
   }
-}
-
-int camera_get_prev(camera_fb_t *pic) {
-  char last_image_filename[50] = {0};
-  char last_image_path[100] = {0};
-  if (pic) {
-    sd_storage_csv_get_newest_photo(last_image_filename);
-    sprintf(last_image_path, PICS_PATH "/%s", last_image_filename);
-
-    FILE *last_image = fopen(last_image_path, "rb");
-    if (last_image) {
-      size_t last_image_size = 0;
-      fseek(last_image, 0, SEEK_END);
-      last_image_size = ftell(last_image);
-      fseek(last_image, 0, SEEK_SET);
-
-      pic->buf = heap_caps_malloc(last_image_size,
-                                  MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
-      if (!pic->buf) {
-        ESP_LOGE(TAG, "Failed to allocate buffer for last image");
-        fclose(last_image);
-        return -1;
-      }
-      pic->len = last_image_size;
-      size_t read = fread(pic->buf, 1, last_image_size, last_image);
-      if (read != last_image_size) {
-        ESP_LOGE(TAG,
-                 "Failed to read whole image (expected size: %d) (got: %d)",
-                 last_image_size, read);
-      }
-    } else {
-      ESP_LOGE(TAG, "Can't open last frame file");
-      return -1;
-    }
-    fclose(last_image);
-  } else {
-    ESP_LOGE(TAG, "pic is NULL");
-    return -1;
-  }
-  return 1;
-}
-
-int camera_get_diff_prev(const camera_fb_t *pic, int difference_threshold) {
-  char last_image_filename[50] = {0};
-  char last_image_path[100] = {0};
-  int diff = 0;
-  if (mem_pool) {
-    if (pic) {
-      sd_storage_csv_get_newest_photo(last_image_filename);
-      sprintf(last_image_path, PICS_PATH "/%s", last_image_filename);
-
-      FILE *last_image = fopen(last_image_path, "rb");
-      if (last_image) {
-        size_t last_image_size = 0;
-        fseek(last_image, 0, SEEK_END);
-        last_image_size = ftell(last_image);
-        fseek(last_image, 0, SEEK_SET);
-
-        float last_image_avg = 0.f, current_image_avg = 0.f;
-        if ((last_image_size <= IMAGE_SIZE) && (pic->len == last_image_size)) {
-          size_t read = fread(mem_pool, 1, last_image_size, last_image);
-          for (int i = 0; i < last_image_size; i++) {
-            last_image_avg += mem_pool[i];
-            current_image_avg += pic->buf[i];
-          }
-
-          last_image_avg /= last_image_size;
-          current_image_avg /= pic->len;
-
-          float brightness_ratio = last_image_avg / current_image_avg;
-          ESP_LOGD(TAG,
-                   "(last_image_avg:%f) (current_image_avg:%f) "
-                   "(brightness_ratio:%f)",
-                   last_image_avg, current_image_avg, brightness_ratio);
-          for (int i = 0; i < read; i++) {
-            int adj_pixel = pic->buf[i] * brightness_ratio;
-            if (abs(mem_pool[i] - adj_pixel) > difference_threshold) {
-              diff++;
-            }
-          }
-        }
-
-        ESP_LOGI(TAG, "Real diff (%d)", diff);
-        diff = convert_range(diff, 0, 100000, 0, 100);
-        memset(mem_pool, 0, IMAGE_SIZE);
-      } else {
-        ESP_LOGE(TAG, "Can't open last frame file");
-      }
-      fclose(last_image);
-    } else {
-      ESP_LOGE(TAG, "pic is NULL");
-    }
-  } else {
-    ESP_LOGE(TAG, "Memory pool is NULL");
-  }
-  return diff;
 }
 
 esp_err_t camera_init(void) {
@@ -300,7 +180,5 @@ esp_err_t camera_init(void) {
   s->set_dcw(s, 1);                         // 0 = disable , 1 = enable
   s->set_colorbar(s, 0);                    // 0 = disable , 1 = enable
 
-  // mem_pool = heap_caps_malloc(IMAGE_SIZE, MALLOC_CAP_8BIT |
-  // MALLOC_CAP_SPIRAM);
   return ESP_OK;
 }

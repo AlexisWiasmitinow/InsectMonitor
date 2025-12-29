@@ -7,7 +7,6 @@
 #include <sys/time.h>
 #include "esp_http_server.h"
 #include "status_handler.h"
-#include "sd_storage.h"
 #include "systime_handler.h"
 #include "wifi_handler.h"
 #include "box_controller.h"
@@ -95,34 +94,7 @@ static esp_err_t update_settings_handler(httpd_req_t *req) {
   char *tokens = query_dup;
   char *p = query_dup;
 
-  bool clean_photos = false;
-
-  while ((p = strsep(&tokens, "&\n"))) {
-    char *var = strtok(p, "="), *val = NULL;
-    if (var && (val = strtok(NULL, "="))) {
-      if (!strcmp(var, SETTINGS_TEMP_TARGET_KEY)) {
-        sd_storage_set_float(var, (float)strtof(val, NULL));
-      } else if (!strcmp(var, SETTINGS_API_TOKEN_KEY)) {
-        sd_storage_set_string(SETTINGS_API_TOKEN_KEY, val, strlen(val));
-      } else {
-        sd_storage_set_int(var, (int)strtol(val, NULL, 10));
-      }
-
-      if (!strcmp(var, SETTINGS_MAX_PHOTOS)) {
-        sd_storage_set_max_photos((int)strtol(val, NULL, 10));
-        sd_storage_delete_oldest_entries((int)strtol(val, NULL, 10));
-      }
-    }
-  }
-  if (sd_storage_update_settings() != ESP_OK) {
-    ESP_LOGE(TAG, "Failed to update settings");
-    ret = ESP_FAIL;
-  }
-  if (clean_photos) {
-    sd_storage_clear_pics_folder();
-  }
   camera_handler_update_settings();
-  box_controller_reload_settings();
 
   free(query);
   free(query_dup);
@@ -212,11 +184,8 @@ static esp_err_t save_network_handler(httpd_req_t *req) {
 
     char *var = strtok(result, "="), *val = NULL;
     if (var && (val = strtok(NULL, "="))) {
-      sd_storage_set_string(var, val, strlen(val));
+      // sd_storage_set_string(var, val, strlen(val));
     }
-  }
-  if (sd_storage_update_settings() != ESP_OK) {
-    ESP_LOGE(TAG, "Failed to update settings");
   }
 
   free(query_dup);
@@ -225,10 +194,6 @@ static esp_err_t save_network_handler(httpd_req_t *req) {
   free(intermediate);
 
   const char *ok_string = "Network settings updated";
-
-  char tz[40] = {0};
-  sh_get_timezone(tz);
-  sh_set_timezone(tz);
 
   httpd_resp_send(req, ok_string, sizeof(ok_string));
   return restart_wifi();
@@ -367,7 +332,6 @@ static esp_err_t update_handler(httpd_req_t *req) {
     char *var = strtok(p, "="), *val = NULL;
     if (var && (val = strtok(NULL, "="))) {
       if (!strcmp("filename", var)) {
-        box_controller_pause_thread(true);
         camera_pause_thread(true);
         webpage_pause(true);
         if (!strcmp("storage.bin", val)) {
@@ -433,13 +397,6 @@ static esp_err_t capture_handler(httpd_req_t *req) {
   return httpd_resp_send_500(req);
 }
 
-static esp_err_t data_logs_get_list_handler(httpd_req_t *req)
-{
-  char buf[1024] = {0};
-  sd_storage_data_logs_get_list(buf, sizeof(buf));
-  return httpd_resp_send(req, buf, strlen(buf));
-}
-
 esp_err_t webpage_pause(bool pause)
 {
   pause_requests = pause;
@@ -457,8 +414,6 @@ esp_err_t webpage_init(void) {
   }
   httpd_config_t config = HTTPD_DEFAULT_CONFIG();
   config.stack_size = 6 * 1024;
-  // config.task_caps &= ~MALLOC_CAP_INTERNAL;
-  // config.task_caps |= MALLOC_CAP_SPIRAM;
   config.uri_match_fn = httpd_uri_match_wildcard;
   config.max_uri_handlers = 16;
   config.lru_purge_enable = true;
@@ -527,14 +482,6 @@ esp_err_t webpage_init(void) {
                                             .method = HTTP_GET,
                                             .handler = capture_handler,
                                             .user_ctx = NULL};
-    static const httpd_uri_t get_data_logs_list_uri = {.uri = "/historicDataList",
-                                            .method = HTTP_GET,
-                                            .handler = data_logs_get_list_handler,
-                                            .user_ctx = NULL};
-    static const httpd_uri_t data_logs_uri = {.uri = "/logs/*",
-                                            .method = HTTP_GET,
-                                            .handler = get_sd_handler,
-                                            .user_ctx = NULL};
 
     httpd_register_uri_handler(server, &index_uri);
     httpd_register_uri_handler(server, &img_uri);
@@ -550,8 +497,6 @@ esp_err_t webpage_init(void) {
     httpd_register_uri_handler(server, &setio_uri);
     httpd_register_uri_handler(server, &savecrop_uri);
     httpd_register_uri_handler(server, &capture_uri);
-    httpd_register_uri_handler(server, &get_data_logs_list_uri);
-    httpd_register_uri_handler(server, &data_logs_uri);
   }
 
   return ret;
