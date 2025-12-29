@@ -114,14 +114,13 @@ esp_err_t pmu_init()
     power.disableDLDO1();
     power.disableDLDO2();
 
-
     //ESP32s3 Core VDD
-    power.setDC3Voltage(3300);
-    power.enableDC3();
-
-    //Extern 3.3V VDD
     power.setDC1Voltage(3300);
     power.enableDC1();
+
+    //Extern 3.3V VDD
+    power.setDC3Voltage(3300);
+    power.enableDC3();
 
     // CAM DVDD  1500~1800
     power.setALDO1Voltage(1800);
@@ -304,10 +303,10 @@ void pmu_isr_handler()
 }
 
 void pmu_go_sleep(void) {
-    power.enableBLDO1(); // disable OLED
-    power.enableALDO1(); // disable CAM
-    power.enableALDO2(); // disable CAM
-    power.enableALDO4(); // disable CAM
+    power.disableBLDO1(); // disable OLED
+    power.disableALDO1(); // disable CAM
+    power.disableALDO2(); // disable CAM
+    power.disableALDO4(); // disable CAM
 
     power.disableIRQ(XPOWERS_AXP2101_ALL_IRQ);
     // Clear all interrupt flags
